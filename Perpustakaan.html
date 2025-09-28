@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perpustakaan Sederhana</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #f0f4f8, #e6ecf0);
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    header {
+      background: linear-gradient(90deg, #2d3e50, #3f5c7d);
+      color: #fff;
+      padding: 20px 0;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2em;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      font-size: 1em;
+      opacity: 0.8;
+    }
+
+    header img {
+      width: 400px;
+      height: auto;
+      margin-top: 10px;
+    }
+
+    #lihatDaftarBuku {
+      margin: 15px auto 0;
+      display: block;
+      padding: 8px 18px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      background: #e67e22;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    #lihatDaftarBuku:hover {
+      background: #3f5c7d;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+
+    .add-book {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .add-book input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+    }
+
+    .add-book button {
+      padding: 12px 20px;
+      background: #3f5c7d;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .add-book button:hover {
+      background: #e67e22;
+    }
+
+    #search {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      color: #2d3e50;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    ul#daftarBuku {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
+    }
+
+    ul#daftarBuku li {
+      background: #f9fafc;
+      padding: 16px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    ul#daftarBuku li strong {
+      font-size: 1.1em;
+      color: #3f5c7d;
+    }
+
+    ul#daftarBuku li em {
+      font-size: 0.9em;
+      color: #555;
+    }
+
+    ul#daftarBuku li button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    ul#daftarBuku li button.hapus {
+      background: #f44336;
+      color: #fff;
+    }
+
+    ul#daftarBuku li button.hapus:hover {
+      background: #c62828;
+    }
+
+    ul#daftarBuku li button.toggle {
+      background: #3f5c7d;
+      color: #fff;
+    }
+
+    ul#daftarBuku li button.toggle:hover {
+      background: #e67e22;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Perpustakaan Sederhana</h1>
+    <img src="https://fh.unmul.ac.id/upload/img/arsip/a_Z5g2QAeps8y.jpg" alt="Gambar Perpustakaan">
+    <button id="lihatDaftarBuku">Lihat Daftar Buku</button>
+    <p>Tambah/Hapus & Status Buku</p>
+  </header>
+
+  <div class="container">
+    <div class="add-book">
+      <input type="text" id="judul" placeholder="Judul Buku">
+      <input type="text" id="penulis" placeholder="Penulis">
+      <button onclick="tambahBuku()">Tambah Buku</button>
+    </div>
+
+    <input type="text" id="search" placeholder="Cari buku...">
+    <h2 id="judulDaftarBuku">Daftar Buku</h2>
+    <ul id="daftarBuku"></ul>
+  </div>
+
+  <script type="module">
+    import { tambahBuku as tambahBukuLib, scrollKeDaftarBuku } from './main.js';
+
+    class Buku {
+      constructor(judul, penulis) {
+        this.judul = judul;
+        this.penulis = penulis;
+        this.status = "tersedia";
+      }
+    }
+
+    class Perpustakaan {
+      constructor() {
+        this.bukuList = JSON.parse(localStorage.getItem('bukuList') || '[]');
+      }
+
+      tambah(buku) {
+        this.bukuList.push(buku);
+        this._simpan();
+      }
+
+      hapus(index) {
+        this.bukuList.splice(index, 1);
+        this._simpan();
+      }
+
+      toggleStatus(index) {
+        this.bukuList[index].status =
+          this.bukuList[index].status === "tersedia" ? "dipinjam" : "tersedia";
+        this._simpan();
+      }
+
+      getAll() {
+        return this.bukuList;
+      }
+
+      _simpan() {
+        localStorage.setItem('bukuList', JSON.stringify(this.bukuList));
+      }
+    }
+
+    const perpustakaan = new Perpustakaan();
+
+    function tampilkanBuku(filterText = "") {
+      const daftarBuku = document.getElementById('daftarBuku');
+      daftarBuku.innerHTML = '';
+
+      perpustakaan.getAll().forEach((buku, idx) => {
+        if (
+          buku.judul.toLowerCase().includes(filterText) ||
+          buku.penulis.toLowerCase().includes(filterText)
+        ) {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <strong>${idx + 1}. ${buku.judul}</strong> - ${buku.penulis} 
+            <em>(${buku.status})</em>
+            <button class="hapus" data-index="${idx}">Hapus</button>
+            <button class="toggle" data-index="${idx}">
+              ${buku.status === "tersedia" ? "Pinjam" : "Kembalikan"}
+            </button>
+          `;
+          daftarBuku.appendChild(li);
+        }
+      });
+
+      daftarBuku.querySelectorAll('.hapus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = btn.getAttribute('data-index');
+          perpustakaan.hapus(idx);
+          tampilkanBuku(document.getElementById('search').value.toLowerCase());
+        });
+      });
+
+      daftarBuku.querySelectorAll('.toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = btn.getAttribute('data-index');
+          perpustakaan.toggleStatus(idx);
+          tampilkanBuku(document.getElementById('search').value.toLowerCase());
+        });
+      });
+    }
+
+    window.tambahBuku = function () {
+      const judul = document.getElementById('judul').value.trim();
+      const penulis = document.getElementById('penulis').value.trim();
+
+      if (tambahBukuLib(judul, penulis, perpustakaan, tampilkanBuku)) {
+        document.getElementById('judul').value = '';
+        document.getElementById('penulis').value = '';
+      }
+    };
+
+    document.getElementById('lihatDaftarBuku').onclick = function () {
+      scrollKeDaftarBuku();
+    };
+
+    document.getElementById('search').addEventListener('input', (e) => {
+      tampilkanBuku(e.target.value.toLowerCase());
+    });
+
+    //buku bawaan
+    if (perpustakaan.getAll().length === 0) {
+      perpustakaan.tambah(new Buku('Laskar Pelangi', 'Andrea Hirata'));
+      perpustakaan.tambah(new Buku('Bumi Manusia', 'Pramoedya Ananta Toer'));
+      perpustakaan.tambah(new Buku('Paduan Memancing', 'Jason R.'));
+    }
+
+    tampilkanBuku();
+  </script>
+</body>
+</html>
